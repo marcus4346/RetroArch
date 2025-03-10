@@ -1641,8 +1641,10 @@
 #define DEFAULT_INPUT_DESCRIPTOR_LABEL_SHOW true
 #define DEFAULT_INPUT_DESCRIPTOR_HIDE_UNBOUND false
 
-#if defined(DINGUX)
+#if defined(DINGUX) && !defined(MIYOO)
 #define DEFAULT_INPUT_MAX_USERS 1
+#elif (DINGUX) && defined(MIYOO)
+#define DEFAULT_INPUT_MAX_USERS 2
 #else
 #define DEFAULT_INPUT_MAX_USERS 8
 #endif

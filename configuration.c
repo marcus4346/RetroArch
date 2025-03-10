@@ -645,13 +645,13 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SWITCH;
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WII;
 #elif defined(WIIU)
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WIIU;
-#elif defined(DINGUX) && defined(HAVE_SDL_DINGUX)
+#elif defined(DINGUX) && defined(HAVE_SDL_DINGUX) && !defined(MIYOO)
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SDL_DINGUX;
 #elif defined(HAVE_X11)
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_X;
 #elif defined(HAVE_UDEV)
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_UDEV;
-#elif defined(__linux__) && !defined(ANDROID)
+#elif defined(__linux__) && !defined(ANDROID) && !defined(MIYOO)
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_LINUXRAW;
 #elif defined(HAVE_WAYLAND)
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WAYLAND;
@@ -659,7 +659,7 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WAYLAND;
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_COCOA;
 #elif defined(__QNX__)
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_QNX;
-#elif defined(HAVE_SDL)
+#elif defined(HAVE_SDL) || defined(MIYOO)
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SDL;
 #elif defined(HAVE_SDL2)
 static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SDL2;
@@ -693,19 +693,19 @@ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_PSP;
 static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_CTR;
 #elif defined(SWITCH)
 static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SWITCH;
-#elif defined(DINGUX) && defined(HAVE_SDL_DINGUX)
+#elif defined(DINGUX) && defined(HAVE_SDL_DINGUX) && !defined(MIYOO)
 static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SDL_DINGUX;
 #elif defined(HAVE_DINPUT)
 static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_DINPUT;
 #elif defined(HAVE_UDEV)
 static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_UDEV;
-#elif defined(__linux) && !defined(ANDROID)
+#elif defined(__linux) && !defined(ANDROID) && !defined(MIYOO)
 static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_LINUXRAW;
 #elif defined(ANDROID)
 static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_ANDROID;
 #elif defined(HAVE_MFI)
 static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_MFI;
-#elif defined(HAVE_SDL) || defined(HAVE_SDL2)
+#elif defined(HAVE_SDL) || defined(HAVE_SDL2) || defined(MIYOO)
 static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SDL;
 #elif defined(DJGPP)
 static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_DOS;
