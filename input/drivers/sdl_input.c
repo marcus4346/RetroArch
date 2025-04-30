@@ -546,6 +546,25 @@ static void sdl_input_poll(void *data)
          if (event.key.keysym.mod & 0x8000 /*KMOD_SCROLL*/)
             mod |= RETROKMOD_SCROLLOCK;
 
+#ifdef MIYOO
+            if (event.key.keysym.sym != SDLK_UP &&
+            event.key.keysym.sym != SDLK_DOWN &&
+            event.key.keysym.sym != SDLK_LEFT &&
+            event.key.keysym.sym != SDLK_RIGHT &&
+            event.key.keysym.sym != SDLK_LALT &&
+            event.key.keysym.sym != SDLK_LCTRL &&
+            event.key.keysym.sym != SDLK_LSHIFT &&
+            event.key.keysym.sym != SDLK_SPACE &&
+            event.key.keysym.sym != SDLK_TAB &&
+            event.key.keysym.sym != SDLK_BACKSPACE &&
+            event.key.keysym.sym != SDLK_PAGEUP &&
+            event.key.keysym.sym != SDLK_PAGEDOWN &&
+            event.key.keysym.sym != SDLK_RALT &&
+            event.key.keysym.sym != SDLK_RSHIFT &&
+            event.key.keysym.sym != SDLK_RCTRL)
+            //event.key.keysym.sym != SDLK_RETURN
+            //event.key.keysym.sym != SDLK_ESCAPE
+#endif
          input_keyboard_event(event.type == SDL_KEYDOWN, code, code, mod,
                RETRO_DEVICE_KEYBOARD);
       }
