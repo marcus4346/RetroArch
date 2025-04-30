@@ -7335,6 +7335,7 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
          {
 #ifdef MIYOO
             {RETROK_LALT,     RETRO_DEVICE_ID_JOYPAD_A      },
+            {RETROK_LCTRL,     RETRO_DEVICE_ID_JOYPAD_B      },
 #else
             {RETROK_LCTRL,     RETRO_DEVICE_ID_JOYPAD_A      },
 #endif
@@ -7348,7 +7349,10 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
          };
 
          if (settings->bools.input_menu_swap_ok_cancel_buttons)
-            ids[0][1] = RETRO_DEVICE_ID_JOYPAD_B;
+	 {
+            ids[0][1] = RETRO_DEVICE_ID_JOYPAD_A;
+            ids[1][1] = RETRO_DEVICE_ID_JOYPAD_B;
+         }
 
          for (i = 0; i < ARRAY_SIZE(ids); i++)
          {
