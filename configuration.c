@@ -1962,7 +1962,11 @@ static struct config_bool_setting *populate_settings_bool(
 #endif
 
 #ifdef HAVE_MENU
+#ifdef MIYOO
+   SETTING_BOOL("menu_unified_controls",         &settings->bools.menu_unified_controls, true, true, false);
+#else
    SETTING_BOOL("menu_unified_controls",         &settings->bools.menu_unified_controls, true, false, false);
+#endif
    SETTING_BOOL("menu_disable_info_button",      &settings->bools.menu_disable_info_button, true, false, false);
    SETTING_BOOL("menu_disable_search_button",    &settings->bools.menu_disable_search_button, true, false, false);
    SETTING_BOOL("menu_disable_left_analog",      &settings->bools.menu_disable_left_analog, true, false, false);
