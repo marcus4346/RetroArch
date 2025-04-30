@@ -7258,6 +7258,22 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
          unsigned i;
          unsigned ids[][2] =
          {
+#ifdef MIYOO
+            {RETROK_LALT,      RETRO_DEVICE_ID_JOYPAD_A      },
+            {RETROK_LCTRL,     RETRO_DEVICE_ID_JOYPAD_B      },
+            {RETROK_SPACE,     RETRO_DEVICE_ID_JOYPAD_Y      },
+            {RETROK_LSHIFT,    RETRO_DEVICE_ID_JOYPAD_X      },
+            {RETROK_RETURN,    RETRO_DEVICE_ID_JOYPAD_START  },
+            {RETROK_ESCAPE,    RETRO_DEVICE_ID_JOYPAD_SELECT },
+            {RETROK_UP,        RETRO_DEVICE_ID_JOYPAD_UP     },
+            {RETROK_DOWN,      RETRO_DEVICE_ID_JOYPAD_DOWN   },
+            {RETROK_LEFT,      RETRO_DEVICE_ID_JOYPAD_LEFT   },
+            {RETROK_RIGHT,     RETRO_DEVICE_ID_JOYPAD_RIGHT  },
+            {RETROK_TAB,       RETRO_DEVICE_ID_JOYPAD_L      },
+            {RETROK_BACKSPACE, RETRO_DEVICE_ID_JOYPAD_R      },
+            {RETROK_RALT,      RETRO_DEVICE_ID_JOYPAD_L3     },
+            {RETROK_RSHIFT,    RETRO_DEVICE_ID_JOYPAD_R3     },
+#else
             {RETROK_RETURN,    RETRO_DEVICE_ID_JOYPAD_A      },
             {RETROK_BACKSPACE, RETRO_DEVICE_ID_JOYPAD_B      },
             {RETROK_DELETE,    RETRO_DEVICE_ID_JOYPAD_Y      },
@@ -7272,6 +7288,7 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
             {RETROK_PAGEDOWN,  RETRO_DEVICE_ID_JOYPAD_R      },
             {RETROK_HOME,      RETRO_DEVICE_ID_JOYPAD_L3     },
             {RETROK_END,       RETRO_DEVICE_ID_JOYPAD_R3     },
+#endif
             /* Extra keys read regardless of 'enable_hotkey' */
             {0,                RARCH_QUIT_KEY                }, /* 14 */
             {0,                RARCH_FULLSCREEN_TOGGLE_KEY   },
@@ -7316,7 +7333,11 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
          unsigned i;
          unsigned ids[][2] =
          {
+#ifdef MIYOO
+            {RETROK_LALT,     RETRO_DEVICE_ID_JOYPAD_A      },
+#else
             {RETROK_LCTRL,     RETRO_DEVICE_ID_JOYPAD_A      },
+#endif
             {RETROK_UP,        RETRO_DEVICE_ID_JOYPAD_UP     },
             {RETROK_DOWN,      RETRO_DEVICE_ID_JOYPAD_DOWN   },
             {RETROK_LEFT,      RETRO_DEVICE_ID_JOYPAD_LEFT   },
@@ -7477,6 +7498,24 @@ void input_keyboard_event(bool down, unsigned code,
     * is active */
    if (menu_st->flags & MENU_ST_FLAG_SCREENSAVER_ACTIVE)
    {
+#ifdef MIYOO
+      if (   (down)
+          && (code != RETROK_UNKNOWN)
+          && (menu_input_dialog_get_display_kb()
+          || !((code == RETROK_RETURN)      /* RETRO_DEVICE_ID_JOYPAD_START */
+          ||   (code == RETROK_ESCAPE)      /* RETRO_DEVICE_ID_JOYPAD_SELECT */
+          ||   (code == RETROK_TAB)         /* RETRO_DEVICE_ID_JOYPAD_L */
+          ||   (code == RETROK_BACKSPACE)   /* RETRO_DEVICE_ID_JOYPAD_R */
+          ||   (code == RETROK_LCTRL)       /* RETRO_DEVICE_ID_JOYPAD_B */
+          ||   (code == RETROK_LALT)        /* RETRO_DEVICE_ID_JOYPAD_A */
+          ||   (code == RETROK_SPACE)       /* RETRO_DEVICE_ID_JOYPAD_Y */
+          ||   (code == RETROK_LSHIFT)      /* RETRO_DEVICE_ID_JOYPAD_X */
+          ||   (code == RETROK_RIGHT)       /* RETRO_DEVICE_ID_JOYPAD_RIGHT */
+          ||   (code == RETROK_LEFT)        /* RETRO_DEVICE_ID_JOYPAD_LEFT */
+          ||   (code == RETROK_DOWN)        /* RETRO_DEVICE_ID_JOYPAD_DOWN */
+          ||   (code == RETROK_UP)          /* RETRO_DEVICE_ID_JOYPAD_UP */
+          ||   (BIT512_GET(input_st->keyboard_mapping_bits, code)))))
+#else
       if (   (down)
           && (code != RETROK_UNKNOWN)
           && (menu_input_dialog_get_display_kb()
@@ -7493,6 +7532,7 @@ void input_keyboard_event(bool down, unsigned code,
           ||   (code == RETROK_RETURN)      /* RETRO_DEVICE_ID_JOYPAD_A */
           ||   (code == RETROK_DELETE)      /* RETRO_DEVICE_ID_JOYPAD_Y */
           ||   (BIT512_GET(input_st->keyboard_mapping_bits, code)))))
+#endif
       {
          struct menu_state *menu_st  = menu_state_get_ptr();
          menu_st->flags             &= ~MENU_ST_FLAG_SCREENSAVER_ACTIVE;
