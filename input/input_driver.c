@@ -6078,6 +6078,30 @@ static void input_keys_pressed(
          BIT256_SET_PTR(p_new_state, RARCH_ENABLE_HOTKEY);
    }
 
+   /* Ignore hotkey block delay when menu toggle is assigned */
+   if (     !any_pressed
+         && !(input_st->flags & INP_FLAG_WAIT_INPUT_RELEASE)
+         && binds[port][RARCH_MENU_TOGGLE].key == binds[port][RARCH_ENABLE_HOTKEY].key)
+   {
+      i = RARCH_MENU_TOGGLE;
+
+      if (     binds[port][i].valid
+            && input_state_wrap(
+                  input_st->current_driver,
+                  input_st->current_data,
+                  input_st->primary_joypad,
+                  sec_joypad,
+                  joypad_info,
+                  binds,
+                  (input_st->flags & INP_FLAG_KB_MAPPING_BLOCKED) ? true : false,
+                  port, RETRO_DEVICE_KEYBOARD, 0,
+                  input_config_binds[port][i].key))
+         input_st->flags |= INP_FLAG_MENU_PRESS_PENDING;
+      else if (input_st->flags & INP_FLAG_MENU_PRESS_PENDING)
+         /* Also set 'enable_hotkey' to prevent hotkey delay untrigger */
+         BIT256_SET_PTR(p_new_state, RARCH_ENABLE_HOTKEY);
+   }
+
    /* Hotkeys are only relevant for the first user or core port */
    if (port != hotkey_port)
       return;
