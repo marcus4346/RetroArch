@@ -6057,7 +6057,7 @@ static void input_keys_pressed(
    if (     !any_pressed
          && !(input_st->flags & INP_FLAG_WAIT_INPUT_RELEASE)
          && !(input_st->flags & INP_FLAG_KB_MAPPING_BLOCKED)
-         && binds[port][RARCH_MENU_TOGGLE].key == binds[port][RARCH_ENABLE_HOTKEY].key)
+         && binds[port][RARCH_MENU_TOGGLE].key)
    {
       i = RARCH_MENU_TOGGLE;
 
