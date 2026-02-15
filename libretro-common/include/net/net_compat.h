@@ -260,6 +260,7 @@ RETRO_BEGIN_DECLS
 #define NI_DGRAM       16
 
 #ifndef __PS3__
+#ifndef HAVE_SOCKET_LEGACY
 struct addrinfo
 {
    int ai_flags;
@@ -271,6 +272,7 @@ struct addrinfo
    char *ai_canonname;
    struct addrinfo *ai_next;
 };
+#endif
 #endif
 
 /* gai_strerror() not used, so we skip that. */
