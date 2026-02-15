@@ -1784,6 +1784,12 @@
 #define DEFAULT_BUILDBOT_SERVER_URL "http://hakchicloud.com/Libretro_Cores/"
 #elif defined(WEBOS)
 #define DEFAULT_BUILDBOT_SERVER_URL "http://retroarch-cores.webosbrew.org/armv7a/"
+#elif defined(MIYOO)
+#if defined(__UCLIBC__)
+#define DEFAULT_BUILDBOT_SERVER_URL "http://buildbot.libretro.com/nightly/dingux/miyoo-arm32/latest/"
+#else
+#define DEFAULT_BUILDBOT_SERVER_URL "http://raw.githubusercontent.com/MiyooCFW/cores/master/cores/musl/latest/"
+#endif
 #elif defined(ANDROID)
 #if defined(ANDROID_ARM_V7)
 #define DEFAULT_BUILDBOT_SERVER_URL "http://buildbot.libretro.com/nightly/android/latest/armeabi-v7a/"
