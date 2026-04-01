@@ -6234,7 +6234,11 @@ static void input_keys_pressed(
 
    if (!is_menu && binds[port][RARCH_GAME_FOCUS_TOGGLE].valid)
    {
+      input_game_focus_state_t *game_focus_st = &input_driver_st.game_focus_state;
+
       /* Never block Game Focus toggle hotkey */
+      /* Ensure that game focus mode is disabled */
+      if (game_focus_st->enabled)
       block_hotkey[RARCH_GAME_FOCUS_TOGGLE] = false;
    }
 
