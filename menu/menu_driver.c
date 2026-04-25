@@ -6376,6 +6376,9 @@ void menu_driver_toggle(
    bool video_adaptive_vsync          = false;
    bool video_vsync                   = false;
    bool video_frame_delay_auto        = false;
+#ifdef HAVE_VIDEO_FILTER
+   bool video_filter_enable           = true;
+#endif
 
    if (settings)
    {

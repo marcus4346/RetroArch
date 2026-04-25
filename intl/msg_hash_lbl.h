@@ -1655,6 +1655,10 @@ MSG_HASH(
    "fps_show"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VIDEO_FILTER_ENABLE,
+   "filter_enable"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_STATISTICS_SHOW,
    "statistics_show"
    )
