@@ -5427,6 +5427,11 @@ static size_t setting_get_string_representation_uint_video_dingux_rs90_softfilte
                   msg_hash_to_str(
                      MENU_ENUM_LABEL_VALUE_VIDEO_DINGUX_RS90_SOFTFILTER_BRESENHAM_HORZ),
                   len);
+         case DINGUX_RS90_SOFTFILTER_SHARP_LINEAR:
+            return strlcpy(s,
+                  msg_hash_to_str(
+                     MENU_ENUM_LABEL_VALUE_VIDEO_DINGUX_RS90_SOFTFILTER_SHARP_LINEAR),
+                  len);
       }
    }
    return 0;

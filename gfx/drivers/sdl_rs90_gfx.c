@@ -88,6 +88,16 @@ struct sdl_rs90_video
    unsigned frame_padding_y;
    unsigned frame_crop_x;
    unsigned frame_crop_y;
+   unsigned sharp_linear_in_width;
+   unsigned sharp_linear_in_height;
+   unsigned sharp_linear_out_width;
+   unsigned sharp_linear_out_height;
+   uint16_t sharp_linear_x0[SDL_RS90_WIDTH];
+   uint16_t sharp_linear_x1[SDL_RS90_WIDTH];
+   uint16_t sharp_linear_y0[SDL_RS90_HEIGHT];
+   uint16_t sharp_linear_y1[SDL_RS90_HEIGHT];
+   uint8_t sharp_linear_x_mode[SDL_RS90_WIDTH];
+   uint8_t sharp_linear_y_mode[SDL_RS90_HEIGHT];
    enum dingux_rs90_softfilter_type softfilter_type;
 #if defined(DINGUX_BETA)
    enum dingux_refresh_rate refresh_rate;
@@ -260,6 +270,108 @@ static void sdl_rs90_scale_frame32_point(sdl_rs90_video_t *vid,
  *        http://blargg.8bitalley.com/info/rgb_mixing.html */
 #define SDL_RS90_PIXEL_AVERAGE_16(a, b) (((a) + (b) + (((a) ^ (b)) & 0x821))   >> 1)
 #define SDL_RS90_PIXEL_AVERAGE_32(a, b) (((a) + (b) + (((a) ^ (b)) & 0x10101)) >> 1)
+#define SDL_RS90_SHARP_LINEAR_LOW  96
+#define SDL_RS90_SHARP_LINEAR_HIGH 160
+#define SDL_RS90_SHARP_LINEAR_NEAR 0
+#define SDL_RS90_SHARP_LINEAR_MIX  1
+#define SDL_RS90_SHARP_LINEAR_FAR  2
+
+static uint32_t sdl_rs90_linear_step(unsigned src_len, unsigned target_len)
+{
+   if ((src_len > 1) && (target_len > 1))
+      return ((uint32_t)(src_len - 1) << 16) / (target_len - 1);
+
+   return 0;
+}
+
+static inline uint8_t sdl_rs90_sharp_linear_mode(unsigned weight)
+{
+   if (weight < SDL_RS90_SHARP_LINEAR_LOW)
+      return SDL_RS90_SHARP_LINEAR_NEAR;
+   if (weight > SDL_RS90_SHARP_LINEAR_HIGH)
+      return SDL_RS90_SHARP_LINEAR_FAR;
+
+   return SDL_RS90_SHARP_LINEAR_MIX;
+}
+
+static void sdl_rs90_update_sharp_linear_map(sdl_rs90_video_t *vid,
+      unsigned width, unsigned height)
+{
+   uint32_t x_step        = 0;
+   uint32_t y_step        = 0;
+   uint32_t x             = 0;
+   uint32_t y             = 0;
+   unsigned col           = 0;
+   unsigned row           = 0;
+   unsigned x0            = 0;
+   unsigned y0            = 0;
+   unsigned target_width  = vid->frame_width;
+   unsigned target_height = vid->frame_height;
+
+   if (   (vid->sharp_linear_in_width    == width)
+       && (vid->sharp_linear_in_height   == height)
+       && (vid->sharp_linear_out_width   == target_width)
+       && (vid->sharp_linear_out_height  == target_height))
+      return;
+
+   x_step = sdl_rs90_linear_step(width, target_width);
+   y_step = sdl_rs90_linear_step(height, target_height);
+
+   for (col = 0; col < target_width; col++)
+   {
+      x0                             = x >> 16;
+      vid->sharp_linear_x0[col]      = (uint16_t)x0;
+      vid->sharp_linear_x1[col]      = (uint16_t)
+            (((x0 + 1) < width) ? x0 + 1 : x0);
+      vid->sharp_linear_x_mode[col]  = sdl_rs90_sharp_linear_mode(
+            (x >> 8) & 0xFF);
+      x += x_step;
+   }
+
+   for (row = 0; row < target_height; row++)
+   {
+      y0                             = y >> 16;
+      vid->sharp_linear_y0[row]      = (uint16_t)y0;
+      vid->sharp_linear_y1[row]      = (uint16_t)
+            (((y0 + 1) < height) ? y0 + 1 : y0);
+      vid->sharp_linear_y_mode[row]  = sdl_rs90_sharp_linear_mode(
+            (y >> 8) & 0xFF);
+      y += y_step;
+   }
+
+   vid->sharp_linear_in_width   = width;
+   vid->sharp_linear_in_height  = height;
+   vid->sharp_linear_out_width  = target_width;
+   vid->sharp_linear_out_height = target_height;
+}
+
+static inline uint16_t sdl_rs90_mix_sharp16(uint16_t a, uint16_t b,
+      unsigned mode)
+{
+   switch (mode)
+   {
+      case SDL_RS90_SHARP_LINEAR_FAR:
+         return b;
+      case SDL_RS90_SHARP_LINEAR_MIX:
+         return SDL_RS90_PIXEL_AVERAGE_16(a, b);
+      default:
+         return a;
+   }
+}
+
+static inline uint32_t sdl_rs90_mix_sharp32(uint32_t a, uint32_t b,
+      unsigned mode)
+{
+   switch (mode)
+   {
+      case SDL_RS90_SHARP_LINEAR_FAR:
+         return b;
+      case SDL_RS90_SHARP_LINEAR_MIX:
+         return SDL_RS90_PIXEL_AVERAGE_32(a, b);
+      default:
+         return a;
+   }
+}
 
 /* Scales a single horizontal line using approximate
  * linear scaling
@@ -453,6 +565,182 @@ static void sdl_rs90_scale_frame32_bresenham_horz(sdl_rs90_video_t *vid,
    }
 }
 
+static void sdl_rs90_scale_frame16_sharp_linear(sdl_rs90_video_t *vid,
+      uint16_t *src, unsigned width, unsigned height,
+      unsigned src_pitch)
+{
+   /* 16 bit - divide pitch by 2 */
+   size_t in_stride        = (size_t)(src_pitch >> 1);
+   size_t out_stride       = (size_t)(vid->screen->pitch >> 1);
+
+   /* Account for x/y padding */
+   uint16_t *top_corner    = (uint16_t*)(vid->screen->pixels) +
+         vid->frame_padding_x + (out_stride * vid->frame_padding_y);
+   uint16_t *target        = NULL;
+   uint16_t *src_row0      = NULL;
+   uint16_t *src_row1      = NULL;
+   unsigned target_width   = vid->frame_width;
+   unsigned target_height  = vid->frame_height;
+   unsigned row            = 0;
+   unsigned col            = 0;
+   unsigned x0             = 0;
+   unsigned x1             = 0;
+   unsigned y0             = 0;
+   unsigned y1             = 0;
+   unsigned x_mode         = 0;
+   unsigned y_mode         = 0;
+   uint16_t upper          = 0;
+   uint16_t lower          = 0;
+
+   if ((width == target_width) && (height == target_height))
+   {
+      for (row = 0; row < target_height; row++)
+         memcpy(top_corner + (out_stride * row),
+               src + (in_stride * row), target_width * sizeof(uint16_t));
+
+      return;
+   }
+
+   sdl_rs90_update_sharp_linear_map(vid, width, height);
+
+   for (row = 0; row < target_height; row++)
+   {
+      y0       = vid->sharp_linear_y0[row];
+      y1       = vid->sharp_linear_y1[row];
+      y_mode   = vid->sharp_linear_y_mode[row];
+      target   = top_corner + (out_stride * row);
+
+      switch (y_mode)
+      {
+         case SDL_RS90_SHARP_LINEAR_NEAR:
+            src_row0 = src + (y0 * in_stride);
+            for (col = 0; col < target_width; col++)
+            {
+               x0       = vid->sharp_linear_x0[col];
+               x1       = vid->sharp_linear_x1[col];
+               x_mode   = vid->sharp_linear_x_mode[col];
+               *(target++) = sdl_rs90_mix_sharp16(
+                     src_row0[x0], src_row0[x1], x_mode);
+            }
+            break;
+         case SDL_RS90_SHARP_LINEAR_FAR:
+            src_row1 = src + (y1 * in_stride);
+            for (col = 0; col < target_width; col++)
+            {
+               x0       = vid->sharp_linear_x0[col];
+               x1       = vid->sharp_linear_x1[col];
+               x_mode   = vid->sharp_linear_x_mode[col];
+               *(target++) = sdl_rs90_mix_sharp16(
+                     src_row1[x0], src_row1[x1], x_mode);
+            }
+            break;
+         default:
+            src_row0 = src + (y0 * in_stride);
+            src_row1 = src + (y1 * in_stride);
+            for (col = 0; col < target_width; col++)
+            {
+               x0       = vid->sharp_linear_x0[col];
+               x1       = vid->sharp_linear_x1[col];
+               x_mode   = vid->sharp_linear_x_mode[col];
+               upper    = sdl_rs90_mix_sharp16(
+                     src_row0[x0], src_row0[x1], x_mode);
+               lower    = sdl_rs90_mix_sharp16(
+                     src_row1[x0], src_row1[x1], x_mode);
+               *(target++) = SDL_RS90_PIXEL_AVERAGE_16(upper, lower);
+            }
+            break;
+      }
+   }
+}
+
+static void sdl_rs90_scale_frame32_sharp_linear(sdl_rs90_video_t *vid,
+      uint32_t *src, unsigned width, unsigned height,
+      unsigned src_pitch)
+{
+   /* 32 bit - divide pitch by 4 */
+   size_t in_stride        = (size_t)(src_pitch >> 2);
+   size_t out_stride       = (size_t)(vid->screen->pitch >> 2);
+
+   /* Account for x/y padding */
+   uint32_t *top_corner    = (uint32_t*)(vid->screen->pixels) +
+         vid->frame_padding_x + (out_stride * vid->frame_padding_y);
+   uint32_t *target        = NULL;
+   uint32_t *src_row0      = NULL;
+   uint32_t *src_row1      = NULL;
+   unsigned target_width   = vid->frame_width;
+   unsigned target_height  = vid->frame_height;
+   unsigned row            = 0;
+   unsigned col            = 0;
+   unsigned x0             = 0;
+   unsigned x1             = 0;
+   unsigned y0             = 0;
+   unsigned y1             = 0;
+   unsigned x_mode         = 0;
+   unsigned y_mode         = 0;
+   uint32_t upper          = 0;
+   uint32_t lower          = 0;
+
+   if ((width == target_width) && (height == target_height))
+   {
+      for (row = 0; row < target_height; row++)
+         memcpy(top_corner + (out_stride * row),
+               src + (in_stride * row), target_width * sizeof(uint32_t));
+
+      return;
+   }
+
+   sdl_rs90_update_sharp_linear_map(vid, width, height);
+
+   for (row = 0; row < target_height; row++)
+   {
+      y0       = vid->sharp_linear_y0[row];
+      y1       = vid->sharp_linear_y1[row];
+      y_mode   = vid->sharp_linear_y_mode[row];
+      target   = top_corner + (out_stride * row);
+
+      switch (y_mode)
+      {
+         case SDL_RS90_SHARP_LINEAR_NEAR:
+            src_row0 = src + (y0 * in_stride);
+            for (col = 0; col < target_width; col++)
+            {
+               x0       = vid->sharp_linear_x0[col];
+               x1       = vid->sharp_linear_x1[col];
+               x_mode   = vid->sharp_linear_x_mode[col];
+               *(target++) = sdl_rs90_mix_sharp32(
+                     src_row0[x0], src_row0[x1], x_mode);
+            }
+            break;
+         case SDL_RS90_SHARP_LINEAR_FAR:
+            src_row1 = src + (y1 * in_stride);
+            for (col = 0; col < target_width; col++)
+            {
+               x0       = vid->sharp_linear_x0[col];
+               x1       = vid->sharp_linear_x1[col];
+               x_mode   = vid->sharp_linear_x_mode[col];
+               *(target++) = sdl_rs90_mix_sharp32(
+                     src_row1[x0], src_row1[x1], x_mode);
+            }
+            break;
+         default:
+            src_row0 = src + (y0 * in_stride);
+            src_row1 = src + (y1 * in_stride);
+            for (col = 0; col < target_width; col++)
+            {
+               x0       = vid->sharp_linear_x0[col];
+               x1       = vid->sharp_linear_x1[col];
+               x_mode   = vid->sharp_linear_x_mode[col];
+               upper    = sdl_rs90_mix_sharp32(
+                     src_row0[x0], src_row0[x1], x_mode);
+               lower    = sdl_rs90_mix_sharp32(
+                     src_row1[x0], src_row1[x1], x_mode);
+               *(target++) = SDL_RS90_PIXEL_AVERAGE_32(upper, lower);
+            }
+            break;
+      }
+   }
+}
+
 static void sdl_rs90_set_scale_frame_functions(sdl_rs90_video_t *vid)
 {
    /* Set integer scaling by default */
@@ -466,6 +754,10 @@ static void sdl_rs90_set_scale_frame_functions(sdl_rs90_video_t *vid)
          case DINGUX_RS90_SOFTFILTER_BRESENHAM_HORZ:
             vid->scale_frame16 = sdl_rs90_scale_frame16_bresenham_horz;
             vid->scale_frame32 = sdl_rs90_scale_frame32_bresenham_horz;
+            break;
+         case DINGUX_RS90_SOFTFILTER_SHARP_LINEAR:
+            vid->scale_frame16 = sdl_rs90_scale_frame16_sharp_linear;
+            vid->scale_frame32 = sdl_rs90_scale_frame32_sharp_linear;
             break;
          case DINGUX_RS90_SOFTFILTER_POINT:
          default:
