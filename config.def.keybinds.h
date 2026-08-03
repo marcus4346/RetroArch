@@ -707,8 +707,8 @@ static const struct retro_keybind retro_keybinds_1[] = {
    { 
       NULL, NULL,
       AXIS_NONE, AXIS_NONE,
-      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_Y, RETROK_LSHIFT,
-      RETRO_DEVICE_ID_JOYPAD_Y, NO_BTN, 0, 0,
+      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_Y, RETROK_SPACE,
+      RETRO_DEVICE_ID_JOYPAD_Y, NO_BTN, 3, 0,
       true
    },
    { 
@@ -763,8 +763,8 @@ static const struct retro_keybind retro_keybinds_1[] = {
    {
       NULL, NULL,
       AXIS_NONE, AXIS_NONE,
-      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_X, RETROK_SPACE,
-      RETRO_DEVICE_ID_JOYPAD_X, NO_BTN, 3, 0,
+      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_X, RETROK_LSHIFT,
+      RETRO_DEVICE_ID_JOYPAD_X, NO_BTN, 0, 0,
       true
    },
    {
